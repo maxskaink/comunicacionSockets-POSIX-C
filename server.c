@@ -149,6 +149,7 @@ void *comunicacion(void *args){
         buf[bytes_read] = '\0';
         printf("message user(%d)-> %s\n",clientSocket ,buf);
     }
+    close(clientSocket);
 }
 
 void handle_sigint(int sig){
