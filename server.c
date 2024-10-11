@@ -115,14 +115,6 @@ int main(int argc, char *argv[]){
     }
     close(s);
     terminate();
-    //(Bloqueandote) esperar por una conexion c - accept
-    //- recibir el saludo (read)
-    //- enviar el salduo de vuelta (write)
-    //- se establece una comunicacion (estructura repetitiva)
-    //- se cierra el socket del cliente
-    //Se cierra el socket del servidor
-
-    exit(EXIT_SUCCESS);
 }
 
 int createConexion(int client_socket){
