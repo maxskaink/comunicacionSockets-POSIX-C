@@ -44,7 +44,7 @@ void *comunicacion(void *args);
 struct Server
 {
     int numeroHilos;
-    int hilosUsuarios[];
+    int *hilosUsuarios;
 };
 
 
@@ -63,7 +63,8 @@ int main(int argc, char *argv[]){
 
     //Obtener un conector s = socket(...)
 
-    myServer = malloc(sizeof(struct Server) +100*sizeof(int));
+    myServer = malloc(sizeof(struct Server));
+    myServer->hilosUsuarios = malloc(100*sizeof(int));
     myServer->numeroHilos = 0;
     struct sockaddr_in addr; /*Direccion del servidor*/
 
@@ -73,7 +74,7 @@ int main(int argc, char *argv[]){
     int PORT = atoi(argv[1]);
 
     if(PORT ==0){
-        printf("INgrese un puerto valido\n");
+        printf("Ingrese un puerto valido\n");
         exit(EXIT_FAILURE);
     }
 
@@ -98,13 +99,14 @@ int main(int argc, char *argv[]){
     while (1) {
         struct sockaddr_in client_addr;
         socklen_t client_len = sizeof(client_addr);
+        //Se bloquea esperando conexion de algun usuario
         int client_socket = accept(s, (struct sockaddr *)&client_addr, &client_len);
         if (client_socket == -1) {
             perror("accept");
             continue;
         }
 
-        printf("Cliente conectado\n");
+        printf("Cliente [%d] conectado\n", client_socket);
 
         if(createConexion(client_socket) == -1){
             printf("Error al intentar conetarse\n");
@@ -126,10 +128,12 @@ int createConexion(int client_socket){
 
     pthread_t thread_id;
     if(pthread_create(&thread_id, NULL, comunicacion, (void *)client_socket_ptr) != 0){
+        free(client_socket_ptr);
         return -1;
     }
 
     pthread_detach(thread_id);
+    return 0;
 }
 void *comunicacion(void *args){
     int clientSocket = *(int *) args;
@@ -163,6 +167,7 @@ void terminate(){
     for(size_t i = 0; i < myServer->numeroHilos; i++)
         close(myServer->hilosUsuarios[i]);
 
+    free(myServer->hilosUsuarios);
     free(myServer);    
     close(s);
     exit(EXIT_SUCCESS);
