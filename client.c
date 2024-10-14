@@ -21,30 +21,32 @@
 #define BUFFER_SIZE 256
 
 /**
- * @brief Va a manejar el cerrar la aplicacion de manera adeucada
+ * @briefManejar el cerrar la aplicacion de manera adecuada
  * @param sig la senial asociada
  */
 void terminate(int sig);
 
 /**
- * @brief Va a leer por consola cadenas para enviarlas por el scoket
+ * @brief Lee por consola cadenas para enviarlas por el scoket al server
  * @param clientSocker socket para enviar mensajes
  */
 void *hiloLecturaEntrada(void *args);
 
 /**
- * @brief Va a esperar que el servidor envie mesnajes para mostrarlos por consola
- * @param clientSocket socket para esucchar mensajes
+ * @brief Esperar que el servidor envie mesnajes para mostrarlos por consola
+ * @param clientSocket socket para escuchar mensajes
  */
 void *hiloEscritura(void *args);
-int client_socket;
-pthread_t thread_id_escritura;
-pthread_t thread_id_lectura;
+
+int client_socket; /* Socket de conexion con el server */
+pthread_t thread_id_escritura; /* id  hilo de escritura */
+pthread_t thread_id_lectura; /* id hilo de lectura*/
 
 int main(int argc, char *argv[]) {
+    //Asginamos la seniales para finalizacion planeada
     signal(SIGINT, terminate);
     signal(SIGTERM, terminate);
-    //Validamos que tenga todos loa argumentos necesarios
+    //Validamos que tenga cantidad de argumentos necesarios
     if (argc < 3) {
         printf("Uso: %s <IP del servidor> <Puerto>\n", argv[0]);
         exit(EXIT_FAILURE);
@@ -60,8 +62,9 @@ int main(int argc, char *argv[]) {
         perror("Error al crear elsocket");
         exit(EXIT_FAILURE);
     }
-    int *clientSocketPtr = &client_socket;
+
     //Creamos las estructuras para crear la conexion
+    int *clientSocketPtr = &client_socket;
     struct sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
@@ -86,6 +89,7 @@ int main(int argc, char *argv[]) {
     //Hacemos el saludo siguiendo el protocolo
     send_greeting(client_socket);
 
+    //Creamos los hilos para leer y escribirm mensajes
     pthread_create(&thread_id_escritura, NULL, hiloEscritura, (void *)clientSocketPtr);
     pthread_create(&thread_id_lectura, NULL, hiloLecturaEntrada, (void *)clientSocketPtr);
 
@@ -98,17 +102,20 @@ int main(int argc, char *argv[]) {
 }
 
 void *hiloLecturaEntrada(void *args){
+    //Extraemos el socket
     int clientSocket = *(int * )args;
 
     char buff[BUFFER_SIZE];
-
     while(1){
+        //recibimos por consola un texto
         if( fgets(buff, BUFFER_SIZE, stdin) != NULL ){
+            //Sacamos longitud del mensaje 
             size_t len = strlen(buff);
             if (len > 0 && buff[len - 1] == '\n') {
                 buff[len - 1] = '\0';
             }
 
+            //Mandamos el mensaje al servidor
             if (write(clientSocket, buff, strlen(buff)) == -1) {
                 perror("Error sendin message");
                 break;
@@ -119,16 +126,15 @@ void *hiloLecturaEntrada(void *args){
     return NULL;
 }
 
-/**
- * @brief Va a esperar que el servidor envie mesnajes para mostrarlos por consola
- * @param clientSocket socket para esucchar mensajes
- */
 void *hiloEscritura(void *args){
+    //Extraemos el socket
     int clientSocket = *(int *)args;
 
     char buff[BUFFER_SIZE];
     while(1){
+        //Esperamos a un mensaje del servidor
         size_t bytes_read = read(client_socket, buff, BUFFER_SIZE-1);
+        //Validamos si hubo algun error leyendo el mensaje o por desconexion
         if(bytes_read == -1){
             perror("error reading message");
             break;
@@ -137,6 +143,7 @@ void *hiloEscritura(void *args){
             terminate(1);
             break;
         }
+        //Imprimimos el mensaje
         buff[bytes_read] = '\0';
         printf("%s\n", buff);
     }
