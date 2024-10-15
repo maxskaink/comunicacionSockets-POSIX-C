@@ -1,4 +1,4 @@
-Elaborado por: Miguel Angel Calambas <mangelcvivas@unicauca.edu.co>
+Elaborado por: Miguel Angel Calambas - 104622011407 <mangelcvivas@unicauca.edu.co>
 
 Se deberá desarrollar dos programas en C que implementen la funcionalidad de conectar un servidor con uno, y posiblemente varios clientes, a travésde sockets IPv4. 
 
